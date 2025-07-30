@@ -1,13 +1,17 @@
 import React, {useEffect, useState} from 'react'
-import BASIC_DATA from '../../const';
+
 
 function ItemsToPlanList() {
     const [itemsToPlan, setItemsToPlan] = useState([]);
 
 const linkGen = (obj) => {   
-    const filepath:string = BASIC_DATA.LOCAL_SERVER + obj.po + '\\' +  obj.po + ' ' + obj.drawing + '.pdf'
-    console.log(filepath)
-    const result = "http://localhost:8000/api/pdf/${encodeURIComponent(" + filepath + ")}"
+
+    const item_fn = (obj: any) => {
+        return obj.po + obj.drawing
+    }
+
+    const filename = item_fn(obj)
+    const result = `http://localhost:8000/api/pdf_view/${encodeURIComponent(filename)}`
     return result
 }
 
@@ -17,6 +21,8 @@ const linkGen = (obj) => {
         .then(data => setItemsToPlan(data))
         .catch(error => console.error('Error, error'));
     }, []);
+
+
 
     return (
         <div>
