@@ -3,12 +3,12 @@
   width: 100vw;
   height: 100vh;
 
-  grid-template-columns: 237px 1fr;
-  grid-template-rows: 5rem 4fr 5rem;
+  grid-template-columns: 1fr 4fr;
+  grid-template-rows: 160px calc(100vh - 160px);
   grid-template-areas:
     'header header'
     'sidebar main'
-    'footer footer';
+    ;
   background: var(--color-white);
   color: var(--color-grey);
 }
@@ -24,8 +24,8 @@
 
 main {
   grid-area: main;
-  height: calc(100vh - 5rem - 5rem);
-  overflow-y: auto;
+  height: calc(100vh - 200px );
+  overflow-y: scroll;
   display: flex;
   flex-direction: column;
   flex: 1;

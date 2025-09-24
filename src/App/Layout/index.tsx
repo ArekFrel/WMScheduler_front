@@ -1,22 +1,18 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom'
-import { AppHeader } from './AppHeader'
-import { AppFooter } from './AppFooter';
-import { ErrorBoundary } from './ErrorBoundary';
-import './styles/layout.css';
-import { AppAside } from './AppAside';
-
+import React from "react";
+import { Outlet } from "react-router-dom";
+import { AppHeader } from "./AppHeader";
+import { AppFooter } from "./AppFooter";
+import { ErrorBoundary } from "./ErrorBoundary";
+import "./styles/layout.css";
+import { AppAside } from "./AppAside";
 
 function getLayoutClassName(withSidebar?: boolean): string {
-  return withSidebar ? 'layout with-sidebar' : 'layout';
+  return withSidebar ? "layout with-sidebar" : "layout";
 }
 
-
 type LayoutProps = {
-  withSidebar?: boolean,
+  withSidebar?: boolean;
 };
-
-
 
 export const Layout: React.FC<LayoutProps> = ({ withSidebar }) => {
   return (
@@ -27,9 +23,8 @@ export const Layout: React.FC<LayoutProps> = ({ withSidebar }) => {
         <main>
           <Outlet />
         </main>
-        <AppFooter />
+        {/* <AppFooter /> */}
       </div>
     </ErrorBoundary>
   );
 };
-
