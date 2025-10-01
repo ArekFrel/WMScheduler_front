@@ -1,0 +1,86 @@
+div .dates {
+    width: 25px
+}
+
+div .po {
+    width: 135px
+}
+
+div .operation {
+    width: 135px;
+}
+
+
+li {
+    height: 150px;
+    padding-left: 15px;
+}
+
+.tech-table {
+    overflow-x: auto;
+    width: 100%;
+}
+
+tbody {
+    /* tabela nie zawija się, tylko rośnie w poziomie */
+    border-collapse: collapse;
+}
+th.date-heading{
+    min-width: 40px;
+    width: 60px;
+}
+
+tr {
+    color: #0044ff81;
+    font-weight: 600;
+    text-wrap: nowrap;
+    font-family: Calibri;
+    font-size: 22px;
+}
+
+tr:nth-child(even) {
+    background-color: #ffffffff;
+}
+
+tr:nth-child(odd) {
+    background-color: #D9E1F2;
+}
+
+thead.heading tr {
+    background-color: #4472C4;
+    color: #ffffff;
+    text-wrap: nowrap;
+}
+
+td {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+td.past {
+    background-color: #F8696B;
+    max-width: 20px;
+}
+
+td.current {
+    background-color: #E0E383;
+    max-width: 20px;
+
+}
+
+td.far {
+    background-color: #63BE7B;
+    max-width: 20px;
+
+}
+
+.td-op {
+    width: 200px;
+    min-width: 175px;
+    color: black;
+}
+
+tr.record-row:hover {
+    background-color: #FFF2CC;
+    font-style:bold;
+}

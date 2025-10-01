@@ -4,6 +4,8 @@ import djangologo from "../../assets/djangologo.svg";
 import ItemsToPlanList from "../ItemsToPlan/App";
 import "./App.css";
 
+
+
 function HomePage() {
   const [count, setCount] = useState(0);
 

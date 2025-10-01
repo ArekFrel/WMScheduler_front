@@ -3,7 +3,7 @@
   width: 100vw;
   height: 100vh;
 
-  grid-template-columns: 1fr 4fr;
+  grid-template-columns: 8fr 92fr;
   grid-template-rows: 160px calc(100vh - 160px);
   grid-template-areas:
     'header header'
