@@ -1,5 +1,5 @@
 div .dates {
-    width: 25px
+    width: 45px
 }
 
 div .po {
@@ -7,7 +7,7 @@ div .po {
 }
 
 div .operation {
-    width: 135px;
+    width: 160px;
 }
 
 
@@ -16,19 +16,111 @@ li {
     padding-left: 15px;
 }
 
-.tech-table {
+div.tech-table {
     overflow-x: auto;
     width: 100%;
 }
 
-tbody {
-    /* tabela nie zawija się, tylko rośnie w poziomie */
-    border-collapse: collapse;
+thead.heading {
+    position: sticky;
+    top: 0;
+    z-index: 2;
 }
-th.date-heading{
-    min-width: 40px;
-    width: 60px;
+
+th.date-heading {
+    min-width: 50px;
+    width: 70px;
 }
+
+th.id-column {
+    min-width: 80px;
+    width: 80px;
+}
+
+th.po-column {
+    min-width: 95px;
+    width: 95px;
+}
+
+th.rysunek-column {
+    min-width: 185px;
+    width: 185px;
+}
+
+th.sztuki-column {
+    min-width: 80px;
+    width: 80px;
+}
+
+th.material-column {
+    min-width: 165px;
+    width: 165px;
+}
+
+th.przygotowka-column {
+    width: 150px;
+    min-width: 120px;
+}
+
+th.komentarz-column {
+    width: 220px;
+    min-width: 200px;
+}
+
+tr th.operation-column {
+    width: 80px;
+    min-width: 60px;
+}
+
+th.otherInfo-column {
+    width: 130px;
+    min-width: 100px;
+}
+
+td.id-style {
+    color: black;
+    font-size: 0.75em;
+}
+
+td.brak-tech-style {
+    background-color: #f067a6;
+    color: black;
+}
+
+td.stopped-style {
+    background-color: #f58220;
+}
+
+td.start-style {
+    background-color: #b9e5fb;
+    color: black;
+}
+
+td.rel-stat-style {
+    background-color: #8dc63f;
+    color: black;
+}
+
+td.crtd-stat-style {
+    background-color: #ffdd00;
+    color: black;
+}
+
+td.teco-stat-style {
+    background-color: #777777;
+    color: black;
+}
+
+td.when-style {
+    color: black;
+}
+
+td.not-empty-op {
+    background-color: #C6E0B4;
+    color: black;
+}
+
+
 
 tr {
     color: #0044ff81;
@@ -55,6 +147,7 @@ thead.heading tr {
 td {
     padding-left: 5px;
     padding-right: 5px;
+    color: black;
 }
 
 td.past {
@@ -74,13 +167,21 @@ td.far {
 
 }
 
-.td-op {
-    width: 200px;
-    min-width: 175px;
-    color: black;
+tr.record-row:hover {
+    background-color: #f5ddbe;
+    font-style: bold;
 }
 
-tr.record-row:hover {
-    background-color: #FFF2CC;
-    font-style:bold;
+.input-operation {
+    width: 220px;
+    background: none;
+    border-radius: 5px;
+    color: black;
+    font-size: 1.25rem;
+    font-style: italic;
+    font-weight: 600;
+    height: 75px;
+    border: none;
+    text-align: center;
+    /* border-color: #4472C4; */
 }

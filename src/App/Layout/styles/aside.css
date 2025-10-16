@@ -20,10 +20,12 @@ aside li {
     padding-bottom: 32px;
 }
 
-.aside-row {
+nav ul .aside-row {
     display: flex;
     flex-direction: row;
     align-items: center;
+    width: 120px;
+
 }
 
 aside li a {

@@ -4,7 +4,7 @@ import PDFWorker from "../../../src/pdf.worker";
 import { Document, Page, pdfjs } from "react-pdf";
 import { useInView } from "react-intersection-observer";
 import "./styles.css";
-import headingsName from "./utils";
+import { headingsName, operationsNames } from "./utils";
 
 class PDFErrorBoundary extends Component<
   { children: ReactNode },
@@ -23,7 +23,6 @@ class PDFErrorBoundary extends Component<
     if (this.state.hasError) {
       return <div>Miniatura niedostępna</div>;
     }
-
     return this.props.children;
   }
 }
@@ -36,6 +35,11 @@ interface TechRecord {
   ID: number;
   PO: number;
   Rysunek: string;
+  Sztuki: number;
+  Materiał: String;
+  Cięcia: String;
+  Przygotówka: String;
+  Komentarz: String;
   OP_1: string;
   OP_2: string;
   OP_3: string;
@@ -46,7 +50,25 @@ interface TechRecord {
   OP_8: string;
   OP_9: string;
   OP_10: string;
+  Status_Text: string;
+  Op0: string;
+  "System Status": string;
+  "Planista 0": string;
+  Kiedy: string;
 }
+
+const ops: (keyof TechRecord)[] = [
+  "OP_1",
+  "OP_2",
+  "OP_3",
+  "OP_4",
+  "OP_5",
+  "OP_6",
+  "OP_7",
+  "OP_8",
+  "OP_9",
+  "OP_10",
+];
 
 interface PdfThumbnailProps {
   arg: TechRecord;
@@ -55,6 +77,7 @@ interface PdfThumbnailProps {
 function Technology() {
   const [results, setResults] = useState([]);
   const [numberOfEmptyTech, setNumberofEmptyTech] = useState(0);
+  const [changedResults, setChangedResults] = useState([results])
 
   useEffect(() => {
     fetch(BIG_CONSTS.SOURCES.noTechData)
@@ -80,11 +103,82 @@ function Technology() {
     return "blank";
   };
 
+  const statusStyle = (arg: string) => {
+    if (arg == "Brak Tech") {
+      return "brak-tech-style";
+    }
+    if (arg == "Oczekuje") {
+      return "oczekuje-style";
+    }
+    if (arg == "Start") {
+      return "start-style";
+    }
+    if (arg == "Wstrzymano") {
+      return "stopped-style";
+    }
+    if (arg == "Wstrzymano") {
+      return "stopped-style";
+    }
+    return "";
+  };
+
+  const opStyle = (arg: string) => {
+    if (arg !== '' && arg !== null) {
+      return "not-empty-op";
+    }
+  };
+
+  const orderStatStyle = (arg: String) => {
+    if (arg == "REL") {
+      return "rel-stat-style";
+    }
+    if (arg == "CRTD") {
+      return "crtd-stat-style";
+    }
+    if (arg == "TECO") {
+      return "teco-stat-style";
+    }
+    return "";
+  };
+
   const headingStyle = (arg: string) => {
     if (["S", "F"].includes(arg)) {
       return "date-heading";
     }
+    if (["ID"].includes(arg)) {
+      return "id-column";
+    }
+    if (["PO"].includes(arg)) {
+      return "po-column";
+    }
+    if (["Rysunek"].includes(arg)) {
+      return "rysunek-column";
+    }
+    if (["Sztuki", "Cięcia"].includes(arg)) {
+      return "sztuki-column";
+    }
+    if (["Materiał"].includes(arg)) {
+      return "material-column";
+    }
+    if (["Przygotówka"].includes(arg)) {
+      return "przygotowka-column";
+    }
+    if (["Komentarz"].includes(arg)) {
+      return "komentarz-column";
+    }
+    if (arg.startsWith("Op")) {
+      return "operation-column";
+    }
+    if (["Status", "Zlecenie", "Planista"].includes(arg)) {
+      return "otherInfo-column";
+    }
     return "";
+  };
+
+  const idTextFormatting = (arg: Number) => {
+    const zeroed = arg.toString().padStart(6, "0");
+
+    return zeroed.slice(0, 3) + "-" + zeroed.slice(3);
   };
 
   function PdfThumbnail({ arg }: PdfThumbnailProps) {
@@ -169,31 +263,73 @@ function Technology() {
         </div>
       );
     }
+
     return (
       <tbody>
         {arg.map((record: TechRecord) => (
           <tr key={record.ID} className="record-row">
             <td className={dateStyle(record.S)}>{record.S}</td>
             <td className={dateStyle(record.F)}>{record.F}</td>
-            <td>{record.ID}</td>
+            <td className="id-style ">{idTextFormatting(record.ID)}</td>
             <td>{record.PO}</td>
             <td>{anchorThumbnail(record)}</td>
             <td>{record.Rysunek}</td>
-            <td className="td-op">{record.OP_1}</td>
-            <td className="td-op">{record.OP_2}</td>
-            <td className="td-op">{record.OP_3}</td>
-            <td className="td-op">{record.OP_4}</td>
-            <td className="td-op">{record.OP_5}</td>
-            <td className="td-op">{record.OP_6}</td>
-            <td className="td-op">{record.OP_7}</td>
-            <td className="td-op">{record.OP_8}</td>
-            <td className="td-op">{record.OP_9}</td>
-            <td className="td-op">{record.OP_10}</td>
+            <td className="sztuki_column">{record.Sztuki}</td>
+            <td>{record.Materiał}</td>
+            <td>{record.Cięcia}</td>
+            <td>{record.Przygotówka}</td>
+            <td>{record.Komentarz}</td>
+            {ops.map((op) => (
+                <SelectField id={record.ID} operation={String(record[op])} />
+            ))}
+            <td className={statusStyle(record.Status_Text)}>
+              {record.Status_Text}{" "}
+            </td>
+            <td className={opStyle(record.Op0)}>{record.Op0}</td>
+            <td className={orderStatStyle(record["System Status"])}>
+              {record["System Status"]}
+            </td>
+            <td>{record["Planista 0"]}</td>
+            <td className="when-style">{record.Kiedy}</td>
           </tr>
         ))}
       </tbody>
     );
   }
+
+  type SelectFieldProps = {
+    id: number;
+    operation: string;
+  };
+
+  const SelectField: React.FC<SelectFieldProps> = ({ id, operation }) => {
+    if (operation==='null') {
+      operation = ''
+    }
+    const [value, setValue] = useState(operation);
+    const handleChangeSelect = (event: any) => {
+      setValue(event.target.value);
+    };
+    const options = operationsNames;
+    
+    return (
+      <td className={opStyle(operation)}>
+        <input
+          className="input-operation"
+          key={id}
+          list="operationsNames"
+          value={value}
+          onChange={handleChangeSelect}
+          placeholder={value}
+        />
+        <datalist id="operationsNames">
+          {options.map((opt, index) => (
+            <option key={index} value={opt} />
+          ))}
+        </datalist>
+      </td>
+    );
+  };
 
   const linkGen = (obj: any) => {
     const item_fn = (obj: any) => {
@@ -204,9 +340,9 @@ function Technology() {
   };
 
   return (
-    <div>
+    <div className="tech-table">
       <h2> Rysunki bez ułożonej Technologii: {numberOfEmptyTech}</h2>
-      <table className="tech-table">
+      <table>
         {headings(headingsName)}
         {bodyTable(results)}
       </table>
