@@ -39,3 +39,15 @@
               {/* {record.OP_9} */}
               <SelectField id={record.ID} op={record.OP_9} />
             </td>''
+
+
+
+      setChangedRecords((prev) => {
+        const existing = prev.find((record) => record.ID = arg.ID);
+        if (existing) {
+          return prev.map((record) =>
+          record.ID === arg.ID ? {...record, [operation]: newValue} : record);
+        } else {
+          return [...prev, { ID: arg.ID, [operation]: newValue }];
+        }
+      })   

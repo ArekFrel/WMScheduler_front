@@ -4,8 +4,10 @@ aside {
     padding-left: 32px;
     display: flex;
     flex-direction: column;
+    flex-shrink: 0;
     justify-content: space-between;
-    overflow-y:hidden;
+    position: sticky;
+    /* overflow-y:visible; */
 }
 
 

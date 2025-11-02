@@ -1,9 +1,10 @@
 .layout {
   display: grid;
+  flex-direction: column;
+  overflow: hidden;
   width: 100vw;
   height: 100vh;
-
-  grid-template-columns: 8fr 92fr;
+  grid-template-columns: 180px calc(100vw - 180px);
   grid-template-rows: 160px calc(100vh - 160px);
   grid-template-areas:
     'header header'
@@ -25,9 +26,8 @@
 main {
   grid-area: main;
   height: calc(100vh - 200px );
-  overflow-y: scroll;
   display: flex;
   flex-direction: column;
-  flex: 1;
+  overflow-y:hidden;
   padding: 1.5rem;
 }

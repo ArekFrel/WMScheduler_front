@@ -77,6 +77,11 @@ th.otherInfo-column {
     min-width: 100px;
 }
 
+th.when-column {
+    width: 170px;
+    min-width: 150px;
+}
+
 td.id-style {
     color: black;
     font-size: 0.75em;
@@ -113,6 +118,9 @@ td.teco-stat-style {
 
 td.when-style {
     color: black;
+    text-wrap: wrap;
+    padding-left: 10px;
+    padding-right: 10px;
 }
 
 td.not-empty-op {
@@ -172,9 +180,10 @@ tr.record-row:hover {
     font-style: bold;
 }
 
-.input-operation {
+select.input-operation {
     width: 220px;
     background: none;
+    /* background-color: blue; */
     border-radius: 5px;
     color: black;
     font-size: 1.25rem;

@@ -1,5 +1,6 @@
 import { useState, useEffect, Component, ReactNode, useRef } from "react";
 import { BIG_CONSTS } from "../../const";
+// import Select from 'react-select';
 import PDFWorker from "../../../src/pdf.worker";
 import { Document, Page, pdfjs } from "react-pdf";
 import { useInView } from "react-intersection-observer";
@@ -72,23 +73,56 @@ const ops: (keyof TechRecord)[] = [
 
 interface PdfThumbnailProps {
   arg: TechRecord;
+  // renderedIds: number[];
+  // setRenderedIds: React.Dispatch<React.SetStateAction<number[]>>;
 }
 
+// const DataLoader = ({
+//   children,
+// }: {
+//   children: (data: TechRecord[]) => JSX.Element;
+// }) => {
+//   const [records, setRecords] = useState<TechRecord[]>([]);
+//   const [loading, setLoading] = useState(true);
+
+//   useEffect(() => {
+//     fetch(BIG_CONSTS.SOURCES.noTechData)
+//       .then((res) => res.json())
+//       .then((data) => {
+//         setRecords(data);
+//         setLoading(false);
+//       })
+//       .catch((err) => {
+//         console.error("Błąd ładowania danych:", err);
+//         setLoading(false);
+//       });
+//   }, []);
+
+//   if (loading) return <div>Ładowanie danych...</div>;
+
+//   return children(records); // przekazujemy dane do dzieci
+// };
+
 function Technology() {
-  const [results, setResults] = useState([]);
+  const [records, setRecords] = useState([]);
+  // const [changedRecords, setChangedRecords] = useState(0);
   const [numberOfEmptyTech, setNumberofEmptyTech] = useState(0);
-  const [changedResults, setChangedResults] = useState([results])
+  // const [renderedIds, setRenderedIds] = useState<number[]>([]);
+  const renderedIdsRef = useRef<number[]>([]);
 
   useEffect(() => {
     fetch(BIG_CONSTS.SOURCES.noTechData)
       .then((response) => response.json())
-      .then((data) => setResults(data))
+      .then((data) => setRecords(data))
       .catch((error) => console.error("Error, error"));
+    setNumberofEmptyTech(records.length);
   }, []);
 
   useEffect(() => {
-    setNumberofEmptyTech(results.length);
-  }, [results]);
+    setNumberofEmptyTech(records.length);
+  }, [records]);  
+
+
 
   const dateStyle = (arg: number) => {
     if (arg < 0) {
@@ -123,7 +157,7 @@ function Technology() {
   };
 
   const opStyle = (arg: string) => {
-    if (arg !== '' && arg !== null) {
+    if (arg !== "" && arg !== null) {
       return "not-empty-op";
     }
   };
@@ -172,6 +206,9 @@ function Technology() {
     if (["Status", "Zlecenie", "Planista"].includes(arg)) {
       return "otherInfo-column";
     }
+    if (arg === "Kiedy") {
+      return "when-column";
+    }
     return "";
   };
 
@@ -181,12 +218,16 @@ function Technology() {
     return zeroed.slice(0, 3) + "-" + zeroed.slice(3);
   };
 
-  function PdfThumbnail({ arg }: PdfThumbnailProps) {
+  function PdfThumbnail({
+    arg,
+    // renderedIds,
+    // setRenderedIds,
+  }: PdfThumbnailProps) {
     const url: string = `${BIG_CONSTS.SOURCES.pdfView}${arg.PO + arg.Rysunek}`;
 
     const { ref: inViewRef, inView } = useInView({
       triggerOnce: true,
-      threshold: 0.1,
+      threshold: 0.5,
     });
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [shouldRender, setShouldRender] = useState(false);
@@ -196,20 +237,44 @@ function Technology() {
       containerRef.current = node;
     };
 
-    useEffect(() => {
-      if (inView) {
-        const timeout = setTimeout(() => {
-          if (containerRef.current) {
-            const { width, height } =
-              containerRef.current.getBoundingClientRect();
-            if (width > 0 && height > 0) {
-              setShouldRender(true);
-            }
+    // useEffect(() => {
+    //   if (arg.ID === 106056) {
+    //     console.log(inView, !renderedIdsRef.current.includes(arg.ID), "   ---", arg.ID);
+    //   }
+    //   if (inView && !renderedIdsRef.current.includes(arg.ID)) {
+    //     const timeout = setTimeout(() => {
+    //       if (containerRef.current) {
+    //         const { width, height } =
+    //           containerRef.current.getBoundingClientRect();
+    //         if (width > 0 && height > 0) {
+    //           setShouldRender(true);
+    //         }
+    //       }
+    //     }, BIG_CONSTS.TIMEOUTS.thumbnailTimeout);
+    //     renderedIdsRef.current.push(arg.ID);
+    //     // setRenderedIds((prev) => [...prev, arg.ID]);
+    //     return () => clearTimeout(timeout);
+    //   }
+    // }, [inView]);
+
+    
+useEffect(() => {
+  if (inView && !shouldRender) {
+    const timeout = setTimeout(() => {
+      if (containerRef.current) {
+        const { width, height } = containerRef.current.getBoundingClientRect();
+        if (width > 0 && height > 0) {
+          setShouldRender(true);
+          if (!renderedIdsRef.current.includes(arg.ID)) {
+            renderedIdsRef.current.push(arg.ID);
           }
-        }, BIG_CONSTS.TIMEOUTS.thumbnailTimeout); //
-        return () => clearTimeout(timeout);
+        }
       }
-    }, [inView]);
+    }, BIG_CONSTS.TIMEOUTS.thumbnailTimeout);
+    return () => clearTimeout(timeout);
+  }
+}, [inView]);
+
 
     return (
       <div
@@ -233,11 +298,17 @@ function Technology() {
             </Document>
           </PDFErrorBoundary>
         ) : (
-          <div>Ładowanie miniatury...</div>
+          <div>Ładowanie</div>
         )}
       </div>
     );
   }
+
+  const whenText = (arg: string) => {
+    const date = arg.slice(0, 10);
+    const time = arg.slice(-12, -7);
+    return date + " TIME:" + time;
+  };
 
   function headings(props: any) {
     return (
@@ -253,12 +324,21 @@ function Technology() {
     );
   }
 
+
+
   function bodyTable(arg: any) {
+  const [changedRecords, setChangedRecords] = useState([]);
+    useEffect(() => {
+    console.log(changedRecords, 'changed records')
+  }, [changedRecords]);
+
     function anchorThumbnail(record: TechRecord) {
       return (
         <div>
           <a href={linkGen(record)} target="_blank" rel="noopener noreferrer">
-            <PdfThumbnail arg={record} />
+            <PdfThumbnail
+              arg={record}
+            />
           </a>
         </div>
       );
@@ -280,7 +360,7 @@ function Technology() {
             <td>{record.Przygotówka}</td>
             <td>{record.Komentarz}</td>
             {ops.map((op) => (
-                <SelectField id={record.ID} operation={String(record[op])} />
+              <SelectField key={op + record.ID} arg={record} operation={op} />
             ))}
             <td className={statusStyle(record.Status_Text)}>
               {record.Status_Text}{" "}
@@ -290,7 +370,7 @@ function Technology() {
               {record["System Status"]}
             </td>
             <td>{record["Planista 0"]}</td>
-            <td className="when-style">{record.Kiedy}</td>
+            <td className="when-style">{whenText(record.Kiedy)}</td>
           </tr>
         ))}
       </tbody>
@@ -298,35 +378,53 @@ function Technology() {
   }
 
   type SelectFieldProps = {
-    id: number;
-    operation: string;
+    arg: TechRecord;
+    operation: keyof TechRecord;
   };
 
-  const SelectField: React.FC<SelectFieldProps> = ({ id, operation }) => {
-    if (operation==='null') {
-      operation = ''
+  const SelectField: React.FC<SelectFieldProps> = ({ arg, operation }) => {
+    let cellValue: string = String(arg[operation]);
+    if (cellValue === "null") {
+      cellValue = "";
     }
-    const [value, setValue] = useState(operation);
+    const [recs, setRecs] = useState([records]);
+    const [value, setValue] = useState(String(cellValue));
+    const [changedRecords, SetChangedRecords] = useState([])
+
     const handleChangeSelect = (event: any) => {
-      setValue(event.target.value);
+      const newValue = event.target.value;
+      setValue(newValue)
+      console.log(newValue, 'newvalue')
+      setChangedRecords([...prev, newValue])
+      // setChangedRecords((prev) => {
+      //   const existing = prev.find((record) => record.ID === arg.ID);
+      //   if (existing) {
+      //     return prev.map((record) =>
+      //       record.ID === arg.ID ? { ...record, [operation]: newValue } : record
+      //     );
+      //   } else {
+      //     return [...prev, { ID: arg.ID, [operation]: newValue }];
+      //   }
+      // });
+      console.log(records[0], "---records");
+      console.log(changedRecords, "---changedrecords");
+      console.log(newValue, "--selected value");
     };
+
     const options = operationsNames;
-    
+
     return (
-      <td className={opStyle(operation)}>
-        <input
+      <td className={opStyle(value)}>
+        <select
           className="input-operation"
-          key={id}
-          list="operationsNames"
+          key={arg.ID}
           value={value}
           onChange={handleChangeSelect}
-          placeholder={value}
-        />
-        <datalist id="operationsNames">
-          {options.map((opt, index) => (
-            <option key={index} value={opt} />
+        > <option value={value}>{value}</option>     
+          {options.map((opt) => (
+            <option key={opt} value={opt}>{opt}</option>
           ))}
-        </datalist>
+        </select>
       </td>
     );
   };
@@ -344,7 +442,7 @@ function Technology() {
       <h2> Rysunki bez ułożonej Technologii: {numberOfEmptyTech}</h2>
       <table>
         {headings(headingsName)}
-        {bodyTable(results)}
+        {bodyTable(records)}
       </table>
     </div>
   );

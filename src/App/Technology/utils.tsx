@@ -1,3 +1,5 @@
+import React, { useEffect, useState } from "react";
+import { BIG_CONSTS } from "../../const";
 
 
 export const headingsName = [
@@ -48,6 +50,57 @@ export const operationsNames = [
   ,'T6-Mazak'
   ,'Brygada'  
 ,]
+
+interface TechRecord {
+  S: number;
+  F: number;
+  ID: number;
+  PO: number;
+  Rysunek: string;
+  Sztuki: number;
+  Materiał: String;
+  Cięcia: String;
+  Przygotówka: String;
+  Komentarz: String;
+  OP_1: string;
+  OP_2: string;
+  OP_3: string;
+  OP_4: string;
+  OP_5: string;
+  OP_6: string;
+  OP_7: string;
+  OP_8: string;
+  OP_9: string;
+  OP_10: string;
+  Status_Text: string;
+  Op0: string;
+  "System Status": string;
+  "Planista 0": string;
+  Kiedy: string;
+}
+
+
+export const DataLoader = ({ children }: { children: (data: TechRecord[]) => JSX.Element }) => {
+  const [records, setRecords] = useState<TechRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(BIG_CONSTS.SOURCES.noTechData)
+      .then((res) => res.json())
+      .then((data) => {
+        setRecords(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Błąd ładowania danych:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <div>Ładowanie danych...</div>;
+
+  return children(records); // przekazujemy dane do dzieci
+};
 
 
 
