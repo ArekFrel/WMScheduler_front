@@ -105,7 +105,7 @@ interface PdfThumbnailProps {
 
 function Technology() {
   const [records, setRecords] = useState([]);
-  // const [changedRecords, setChangedRecords] = useState(0);
+  const changedRecords = [];
   const [numberOfEmptyTech, setNumberofEmptyTech] = useState(0);
   // const [renderedIds, setRenderedIds] = useState<number[]>([]);
   const renderedIdsRef = useRef<number[]>([]);
