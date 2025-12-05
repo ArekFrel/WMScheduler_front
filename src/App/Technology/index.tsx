@@ -1,4 +1,12 @@
-import { useState, useEffect, Component, ReactNode, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  Component,
+  ReactNode,
+  useRef,
+  useCallback,
+  memo,
+} from "react";
 import { BIG_CONSTS } from "../../const";
 // import Select from 'react-select';
 import PDFWorker from "../../../src/pdf.worker";
@@ -71,46 +79,21 @@ const ops: (keyof TechRecord)[] = [
   "OP_10",
 ];
 
-interface PdfThumbnailProps {
-  arg: TechRecord;
-  // renderedIds: number[];
-  // setRenderedIds: React.Dispatch<React.SetStateAction<number[]>>;
+interface TechRow {
+  record: TechRecord;
+  onChangeRecord: void;
+  getFieldValue: void;
+  ops: keyof TechRecord;
 }
 
-// const DataLoader = ({
-//   children,
-// }: {
-//   children: (data: TechRecord[]) => JSX.Element;
-// }) => {
-//   const [records, setRecords] = useState<TechRecord[]>([]);
-//   const [loading, setLoading] = useState(true);
-
-//   useEffect(() => {
-//     fetch(BIG_CONSTS.SOURCES.noTechData)
-//       .then((res) => res.json())
-//       .then((data) => {
-//         setRecords(data);
-//         setLoading(false);
-//       })
-//       .catch((err) => {
-//         console.error("Błąd ładowania danych:", err);
-//         setLoading(false);
-//       });
-//   }, []);
-
-//   if (loading) return <div>Ładowanie danych...</div>;
-
-//   return children(records); // przekazujemy dane do dzieci
-// };
-
 function Technology() {
-  const [records, setRecords] = useState([]);
-  const changedRecords = [];
+  const [records, setRecords] = useState<TechRecord[]>([]);
+  const [changedRecords, setChangedRecords] = useState<TechRecord[]>([]);
   const [numberOfEmptyTech, setNumberofEmptyTech] = useState(0);
-  // const [renderedIds, setRenderedIds] = useState<number[]>([]);
   const renderedIdsRef = useRef<number[]>([]);
 
   useEffect(() => {
+    console.log('making fetch')
     fetch(BIG_CONSTS.SOURCES.noTechData)
       .then((response) => response.json())
       .then((data) => setRecords(data))
@@ -120,9 +103,55 @@ function Technology() {
 
   useEffect(() => {
     setNumberofEmptyTech(records.length);
-  }, [records]);  
+  }, [records]);
 
+  const onChangeRecord = useCallback(
+    (id: number, operation: keyof TechRecord, newValue: string) => {
+      console.log(newValue, "----newValue");
+      setChangedRecords((prev) => {
+        const existingIndex = prev.findIndex((record) => record.ID === id);
+        if (existingIndex !== -1) {
+          const existingRecord = prev[existingIndex];
+          if (existingRecord[operation] === newValue) {
+            // Bez zmian
+            return prev;
+          }
+          const updatedRecord = { ...existingRecord, [operation]: newValue };
+          return [
+            ...prev.slice(0, existingIndex),
+            updatedRecord,
+            ...prev.slice(existingIndex + 1),
+          ];
+        } else {
+          // Nowy rekord zmieniony
+          console.log(
+            ...prev,
+            { ID: id, [operation]: newValue },
+            "new rec changes"
+          );
+          return [...prev, { ID: id, [operation]: newValue }];
+        }
+      })
+      console.log(changedRecords, 'changerecords here');
+    },
+    []
+  );
 
+  const getFieldValue = useCallback((
+    recordId: number,
+    operation: keyof TechRecord
+  ): string => {
+    const changed = changedRecords.find((r) => r.ID === recordId);
+    if (changed && changed[operation] !== undefined) {
+      // console.log(changed[operation], "changed in getfieldvalue");
+      return String(changed[operation]);
+    }
+    const original: TechRecord  = records.find((r) => r.ID === recordId);
+    if (String(original[operation]) === "null") {
+      return "";
+    }
+    return original ? String(original[operation]) : "";
+  }, [changedRecords, records]);
 
   const dateStyle = (arg: number) => {
     if (arg < 0) {
@@ -218,12 +247,8 @@ function Technology() {
     return zeroed.slice(0, 3) + "-" + zeroed.slice(3);
   };
 
-  function PdfThumbnail({
-    arg,
-    // renderedIds,
-    // setRenderedIds,
-  }: PdfThumbnailProps) {
-    const url: string = `${BIG_CONSTS.SOURCES.pdfView}${arg.PO + arg.Rysunek}`;
+  const PdfThumbnail = (arg : TechRecord) => {
+    const urlText: string = `${BIG_CONSTS.SOURCES.pdfView}${arg.PO + arg.Rysunek}`;
 
     const { ref: inViewRef, inView } = useInView({
       triggerOnce: true,
@@ -237,44 +262,23 @@ function Technology() {
       containerRef.current = node;
     };
 
-    // useEffect(() => {
-    //   if (arg.ID === 106056) {
-    //     console.log(inView, !renderedIdsRef.current.includes(arg.ID), "   ---", arg.ID);
-    //   }
-    //   if (inView && !renderedIdsRef.current.includes(arg.ID)) {
-    //     const timeout = setTimeout(() => {
-    //       if (containerRef.current) {
-    //         const { width, height } =
-    //           containerRef.current.getBoundingClientRect();
-    //         if (width > 0 && height > 0) {
-    //           setShouldRender(true);
-    //         }
-    //       }
-    //     }, BIG_CONSTS.TIMEOUTS.thumbnailTimeout);
-    //     renderedIdsRef.current.push(arg.ID);
-    //     // setRenderedIds((prev) => [...prev, arg.ID]);
-    //     return () => clearTimeout(timeout);
-    //   }
-    // }, [inView]);
-
-    
-useEffect(() => {
-  if (inView && !shouldRender) {
-    const timeout = setTimeout(() => {
-      if (containerRef.current) {
-        const { width, height } = containerRef.current.getBoundingClientRect();
-        if (width > 0 && height > 0) {
-          setShouldRender(true);
-          if (!renderedIdsRef.current.includes(arg.ID)) {
-            renderedIdsRef.current.push(arg.ID);
+    useEffect(() => {
+      if (inView && !shouldRender) {
+        const timeout = setTimeout(() => {
+          if (containerRef.current) {
+            const { width, height } =
+              containerRef.current.getBoundingClientRect();
+            if (width > 0 && height > 0) {
+              setShouldRender(true);
+              if (!renderedIdsRef.current.includes(arg.ID)) {
+                renderedIdsRef.current.push(arg.ID);
+              }
+            }
           }
-        }
+        }, BIG_CONSTS.TIMEOUTS.thumbnailTimeout);
+        return () => clearTimeout(timeout);
       }
-    }, BIG_CONSTS.TIMEOUTS.thumbnailTimeout);
-    return () => clearTimeout(timeout);
-  }
-}, [inView]);
-
+    }, [inView]);
 
     return (
       <div
@@ -289,7 +293,7 @@ useEffect(() => {
       >
         {shouldRender ? (
           <PDFErrorBoundary>
-            <Document file={url}>
+            <Document file={urlText}>
               <Page
                 pageNumber={1}
                 width={BIG_CONSTS.SIZES.thumbnailWidth}
@@ -301,8 +305,70 @@ useEffect(() => {
           <div>Ładowanie</div>
         )}
       </div>
-    );
+    ); 
+
   }
+
+  // function PdfThumbnail({ arg }: PdfThumbnailProps) {
+  //   const url: string = `${BIG_CONSTS.SOURCES.pdfView}${arg.PO + arg.Rysunek}`;
+
+  //   const { ref: inViewRef, inView } = useInView({
+  //     triggerOnce: true,
+  //     threshold: 0.5,
+  //   });
+  //   const containerRef = useRef<HTMLDivElement | null>(null);
+  //   const [shouldRender, setShouldRender] = useState(false);
+
+  //   const setRefs = (node: HTMLDivElement) => {
+  //     inViewRef(node);
+  //     containerRef.current = node;
+  //   };
+
+  //   useEffect(() => {
+  //     if (inView && !shouldRender) {
+  //       const timeout = setTimeout(() => {
+  //         if (containerRef.current) {
+  //           const { width, height } =
+  //             containerRef.current.getBoundingClientRect();
+  //           if (width > 0 && height > 0) {
+  //             setShouldRender(true);
+  //             if (!renderedIdsRef.current.includes(arg.ID)) {
+  //               renderedIdsRef.current.push(arg.ID);
+  //             }
+  //           }
+  //         }
+  //       }, BIG_CONSTS.TIMEOUTS.thumbnailTimeout);
+  //       return () => clearTimeout(timeout);
+  //     }
+  //   }, [inView]);
+
+  //   return (
+  //     <div
+  //       ref={setRefs}
+  //       style={{
+  //         width: `${BIG_CONSTS.SIZES.thumbnailWidth}px`,
+  //         height: `${BIG_CONSTS.SIZES.thumbnailHeight}px`,
+  //         display: "flex",
+  //         alignItems: "center",
+  //         overflow: "hidden",
+  //       }}
+  //     >
+  //       {shouldRender ? (
+  //         <PDFErrorBoundary>
+  //           <Document file={url}>
+  //             <Page
+  //               pageNumber={1}
+  //               width={BIG_CONSTS.SIZES.thumbnailWidth}
+  //               renderTextLayer={false}
+  //             />
+  //           </Document>
+  //         </PDFErrorBoundary>
+  //       ) : (
+  //         <div>Ładowanie</div>
+  //       )}
+  //     </div>
+  //   );
+  // }
 
   const whenText = (arg: string) => {
     const date = arg.slice(0, 10);
@@ -324,116 +390,144 @@ useEffect(() => {
     );
   }
 
+  interface PdfThumbnail {
+  arg: TechRecord;
+  // urlText: string
+}
 
+    type AnchorThumbnailProps = {
+      recordId: Number;
+      operation: keyof TechRecord;
+      value: string;
+      onChangeRecord: (
+        id: Number,
+        operations: keyof TechRecord,
+        newValue: string
+      ) => void;
+    };
+  const AnchorThumbnail: React.FC<AnchorThumbnailProps> () => {
+    console.log(arg, 'tutej nr zlecenia')
+    return (
+      <div>
+        <a href={linkGen(arg)} target="_blank" rel="noopener noreferrer">
+          <PdfThumbnail arg={arg} />
+        </a>
+      </div>
+    );
+  }
+
+      type TechnologyRowProps = {
+      record: TechRecord;
+      onChangeRecord: (
+        id: Number,
+        operations: keyof TechRecord,
+        newValue: string
+      ) => void;
+      getFieldValue : (
+        recordId: number,
+        operation: keyof TechRecord
+      ) => void;
+      ops: keyof TechRecord
+    };
+
+  const TechnologyRow: React.FC<TechnologyRowProps> = memo(
+    ({ record, onChangeRecord, getFieldValue, ops }) => (      
+      <tr key={record.ID} className="record-row">
+        <td className={dateStyle(record.S)}>{record.S}</td>
+        <td className={dateStyle(record.F)}>{record.F}</td>
+        <td className="id-style ">{idTextFormatting(record.ID)}</td>
+        <td>{record.PO}</td>
+        <td><AnchorThumbnail arg={record}/></td>
+        <td>{record.Rysunek}</td>
+        <td className="sztuki_column">{record.Sztuki}</td>
+        <td>{record.Materiał}</td>
+        <td>{record.Cięcia}</td>
+        <td>{record.Przygotówka}</td>
+        <td>{record.Komentarz}</td>
+        {ops.map((op: any) => (
+          <SelectField
+            key={op + record.ID}
+            recordId={record.ID}
+            operation={op}
+            value={getFieldValue(record.ID, op)}
+            onChangeRecord={onChangeRecord}
+          />
+        ))}
+        <td className={statusStyle(record.Status_Text)}>
+          {record.Status_Text}{" "}
+        </td>
+        <td className={opStyle(record.Op0)}>{record.Op0}</td>
+        <td className={orderStatStyle(record["System Status"])}>
+          {record["System Status"]}
+        </td>
+        <td>{record["Planista 0"]}</td>
+        <td className="when-style">{whenText(record.Kiedy)}</td>
+      </tr>
+    )
+  );
 
   function bodyTable(arg: any) {
-  const [changedRecords, setChangedRecords] = useState([]);
-    useEffect(() => {
-    console.log(changedRecords, 'changed records')
-  }, [changedRecords]);
-
-    function anchorThumbnail(record: TechRecord) {
-      return (
-        <div>
-          <a href={linkGen(record)} target="_blank" rel="noopener noreferrer">
-            <PdfThumbnail
-              arg={record}
-            />
-          </a>
-        </div>
-      );
-    }
-
     return (
       <tbody>
         {arg.map((record: TechRecord) => (
-          <tr key={record.ID} className="record-row">
-            <td className={dateStyle(record.S)}>{record.S}</td>
-            <td className={dateStyle(record.F)}>{record.F}</td>
-            <td className="id-style ">{idTextFormatting(record.ID)}</td>
-            <td>{record.PO}</td>
-            <td>{anchorThumbnail(record)}</td>
-            <td>{record.Rysunek}</td>
-            <td className="sztuki_column">{record.Sztuki}</td>
-            <td>{record.Materiał}</td>
-            <td>{record.Cięcia}</td>
-            <td>{record.Przygotówka}</td>
-            <td>{record.Komentarz}</td>
-            {ops.map((op) => (
-              <SelectField key={op + record.ID} arg={record} operation={op} />
-            ))}
-            <td className={statusStyle(record.Status_Text)}>
-              {record.Status_Text}{" "}
-            </td>
-            <td className={opStyle(record.Op0)}>{record.Op0}</td>
-            <td className={orderStatStyle(record["System Status"])}>
-              {record["System Status"]}
-            </td>
-            <td>{record["Planista 0"]}</td>
-            <td className="when-style">{whenText(record.Kiedy)}</td>
-          </tr>
+          <TechnologyRow
+            key={record.ID}
+            record={record}
+            getFieldValue={getFieldValue}
+            onChangeRecord={onChangeRecord}
+            ops={ops}
+          />
         ))}
       </tbody>
     );
   }
 
   type SelectFieldProps = {
-    arg: TechRecord;
+    recordId: Number;
     operation: keyof TechRecord;
+    value: string;
+    onChangeRecord: (
+      id: Number,
+      operations: keyof TechRecord,
+      newValue: string
+    ) => void;
   };
 
-  const SelectField: React.FC<SelectFieldProps> = ({ arg, operation }) => {
-    let cellValue: string = String(arg[operation]);
-    if (cellValue === "null") {
-      cellValue = "";
+  const SelectField: React.FC<SelectFieldProps> = memo(
+    ({ recordId, operation, value, onChangeRecord }) => {
+      const handleChangeSelect = (
+        event: React.ChangeEvent<HTMLSelectElement>
+      ) => {
+        console.log(event.target.value);
+        const newValue = event.target.value;
+        onChangeRecord(recordId, operation, newValue);
+      };
+
+      const options = operationsNames;
+
+      return (
+        <td className={opStyle(value)}>
+          <select
+            key={recordId}
+            className="input-operation"
+            onChange={handleChangeSelect}
+          >
+            <option value={value}>{value}</option>
+            {options.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </td>
+      );
     }
-    const [recs, setRecs] = useState([records]);
-    const [value, setValue] = useState(String(cellValue));
-    const [changedRecords, SetChangedRecords] = useState([])
-
-    const handleChangeSelect = (event: any) => {
-      const newValue = event.target.value;
-      setValue(newValue)
-      console.log(newValue, 'newvalue')
-      setChangedRecords([...prev, newValue])
-      // setChangedRecords((prev) => {
-      //   const existing = prev.find((record) => record.ID === arg.ID);
-      //   if (existing) {
-      //     return prev.map((record) =>
-      //       record.ID === arg.ID ? { ...record, [operation]: newValue } : record
-      //     );
-      //   } else {
-      //     return [...prev, { ID: arg.ID, [operation]: newValue }];
-      //   }
-      // });
-      console.log(records[0], "---records");
-      console.log(changedRecords, "---changedrecords");
-      console.log(newValue, "--selected value");
-    };
-
-    const options = operationsNames;
-
-    return (
-      <td className={opStyle(value)}>
-        <select
-          className="input-operation"
-          key={arg.ID}
-          value={value}
-          onChange={handleChangeSelect}
-        > <option value={value}>{value}</option>     
-          {options.map((opt) => (
-            <option key={opt} value={opt}>{opt}</option>
-          ))}
-        </select>
-      </td>
-    );
-  };
+  );
 
   const linkGen = (obj: any) => {
     const item_fn = (obj: any) => {
       return obj.PO + obj.Rysunek;
     };
-    // const filename = item_fn(obj);
     return `${BIG_CONSTS.SOURCES.pdfView}${encodeURIComponent(item_fn(obj))}`;
   };
 
