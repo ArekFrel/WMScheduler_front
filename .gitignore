@@ -25,3 +25,4 @@ dist-ssr
 
 # Confidential files
 src/const.tsx
+src/App/Technology/notebook.tsx

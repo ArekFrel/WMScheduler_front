@@ -14,6 +14,14 @@ import { Document, Page, pdfjs } from "react-pdf";
 import { useInView } from "react-intersection-observer";
 import "./styles.css";
 import { headingsName, operationsNames } from "./utils";
+import {
+  dateStyle,
+  statusStyle,
+  opStyle,
+  orderStatStyle,
+  headingStyle,
+} from "./stylesFunctions";
+import React from "react";
 
 class PDFErrorBoundary extends Component<
   { children: ReactNode },
@@ -45,10 +53,10 @@ interface TechRecord {
   PO: number;
   Rysunek: string;
   Sztuki: number;
-  Materiał: String;
-  Cięcia: String;
-  Przygotówka: String;
-  Komentarz: String;
+  Materiał: string;
+  Cięcia: string;
+  Przygotówka: string;
+  Komentarz: string;
   OP_1: string;
   OP_2: string;
   OP_3: string;
@@ -66,7 +74,7 @@ interface TechRecord {
   Kiedy: string;
 }
 
-const ops: (keyof TechRecord)[] = [
+const ops = [
   "OP_1",
   "OP_2",
   "OP_3",
@@ -77,14 +85,9 @@ const ops: (keyof TechRecord)[] = [
   "OP_8",
   "OP_9",
   "OP_10",
-];
+] as const;
 
-interface TechRow {
-  record: TechRecord;
-  onChangeRecord: void;
-  getFieldValue: void;
-  ops: keyof TechRecord;
-}
+type Ops = (typeof ops)[number];
 
 function Technology() {
   const [records, setRecords] = useState<TechRecord[]>([]);
@@ -93,7 +96,7 @@ function Technology() {
   const renderedIdsRef = useRef<number[]>([]);
 
   useEffect(() => {
-    console.log('making fetch')
+    console.log("making fetch");
     fetch(BIG_CONSTS.SOURCES.noTechData)
       .then((response) => response.json())
       .then((data) => setRecords(data))
@@ -106,10 +109,11 @@ function Technology() {
   }, [records]);
 
   const onChangeRecord = useCallback(
-    (id: number, operation: keyof TechRecord, newValue: string) => {
-      console.log(newValue, "----newValue");
-      setChangedRecords((prev) => {
-        const existingIndex = prev.findIndex((record) => record.ID === id);
+    (id: number, operation: (typeof ops)[number], newValue: string) => {
+      setChangedRecords((prev: TechRecord[]) => {
+        const existingIndex = prev.findIndex(
+          (record: TechRecord) => record.ID === id
+        );
         if (existingIndex !== -1) {
           const existingRecord = prev[existingIndex];
           if (existingRecord[operation] === newValue) {
@@ -124,131 +128,62 @@ function Technology() {
           ];
         } else {
           // Nowy rekord zmieniony
-          console.log(
+          return [
             ...prev,
-            { ID: id, [operation]: newValue },
-            "new rec changes"
-          );
-          return [...prev, { ID: id, [operation]: newValue }];
+            { ID: id, [operation]: newValue } as unknown as TechRecord,
+          ];
         }
-      })
-      console.log(changedRecords, 'changerecords here');
+      });
+      console.log(changedRecords, "changerecords here");
     },
     []
   );
 
-  const getFieldValue = useCallback((
-    recordId: number,
-    operation: keyof TechRecord
-  ): string => {
-    const changed = changedRecords.find((r) => r.ID === recordId);
-    if (changed && changed[operation] !== undefined) {
-      // console.log(changed[operation], "changed in getfieldvalue");
-      return String(changed[operation]);
-    }
-    const original: TechRecord  = records.find((r) => r.ID === recordId);
-    if (String(original[operation]) === "null") {
-      return "";
-    }
-    return original ? String(original[operation]) : "";
-  }, [changedRecords, records]);
-
-  const dateStyle = (arg: number) => {
-    if (arg < 0) {
-      return "past";
-    }
-    if (0 <= arg && arg < 8) {
-      return "current";
-    }
-    if (arg > 7) {
-      return "far";
-    }
-    return "blank";
-  };
-
-  const statusStyle = (arg: string) => {
-    if (arg == "Brak Tech") {
-      return "brak-tech-style";
-    }
-    if (arg == "Oczekuje") {
-      return "oczekuje-style";
-    }
-    if (arg == "Start") {
-      return "start-style";
-    }
-    if (arg == "Wstrzymano") {
-      return "stopped-style";
-    }
-    if (arg == "Wstrzymano") {
-      return "stopped-style";
-    }
-    return "";
-  };
-
-  const opStyle = (arg: string) => {
-    if (arg !== "" && arg !== null) {
-      return "not-empty-op";
-    }
-  };
-
-  const orderStatStyle = (arg: String) => {
-    if (arg == "REL") {
-      return "rel-stat-style";
-    }
-    if (arg == "CRTD") {
-      return "crtd-stat-style";
-    }
-    if (arg == "TECO") {
-      return "teco-stat-style";
-    }
-    return "";
-  };
-
-  const headingStyle = (arg: string) => {
-    if (["S", "F"].includes(arg)) {
-      return "date-heading";
-    }
-    if (["ID"].includes(arg)) {
-      return "id-column";
-    }
-    if (["PO"].includes(arg)) {
-      return "po-column";
-    }
-    if (["Rysunek"].includes(arg)) {
-      return "rysunek-column";
-    }
-    if (["Sztuki", "Cięcia"].includes(arg)) {
-      return "sztuki-column";
-    }
-    if (["Materiał"].includes(arg)) {
-      return "material-column";
-    }
-    if (["Przygotówka"].includes(arg)) {
-      return "przygotowka-column";
-    }
-    if (["Komentarz"].includes(arg)) {
-      return "komentarz-column";
-    }
-    if (arg.startsWith("Op")) {
-      return "operation-column";
-    }
-    if (["Status", "Zlecenie", "Planista"].includes(arg)) {
-      return "otherInfo-column";
-    }
-    if (arg === "Kiedy") {
-      return "when-column";
-    }
-    return "";
-  };
+  const getFieldValue = useCallback(
+    (recordId: number, operation: Ops) => {
+      const changed = changedRecords.find((r) => r.ID === recordId);
+      if (changed && changed[operation] !== undefined) {
+        return String(changed[operation]);
+      }
+      const original = records.find((r) => r.ID === recordId);
+      if (!original) {
+        return "";
+      }
+      if (String(original[operation]) === "null") {
+        return "";
+      }
+      return String(original[operation]);
+    },
+    [changedRecords, records]
+  );
 
   const idTextFormatting = (arg: Number) => {
     const zeroed = arg.toString().padStart(6, "0");
-
     return zeroed.slice(0, 3) + "-" + zeroed.slice(3);
   };
 
-  const PdfThumbnail = (arg : TechRecord) => {
-    const urlText: string = `${BIG_CONSTS.SOURCES.pdfView}${arg.PO + arg.Rysunek}`;
+    interface PdfThumbnailProps {
+    id: number;
+    po: number;
+    rysunek: string;
+  }
+
+  const AnchorThumbnail = React.useCallback(( arg : PdfThumbnailProps) => {
+    return (
+      <div>
+        <a href={linkGen(arg)} target="_blank" rel="noopener noreferrer">
+          <PdfThumbnail id={arg.id} po={arg.po} rysunek={arg.rysunek} />
+        </a>
+      </div>
+    );
+  }, []);
+
+
+
+  const PdfThumbnail = React.memo(({id, po, rysunek }: PdfThumbnailProps) => {
+    const urlText: string = `${BIG_CONSTS.SOURCES.pdfView}${
+      po.toString() + rysunek
+    }`;
 
     const { ref: inViewRef, inView } = useInView({
       triggerOnce: true,
@@ -270,8 +205,8 @@ function Technology() {
               containerRef.current.getBoundingClientRect();
             if (width > 0 && height > 0) {
               setShouldRender(true);
-              if (!renderedIdsRef.current.includes(arg.ID)) {
-                renderedIdsRef.current.push(arg.ID);
+              if (!renderedIdsRef.current.includes(id)) {
+                renderedIdsRef.current.push(id);
               }
             }
           }
@@ -305,9 +240,8 @@ function Technology() {
           <div>Ładowanie</div>
         )}
       </div>
-    ); 
-
-  }
+    );
+  });
 
   // function PdfThumbnail({ arg }: PdfThumbnailProps) {
   //   const url: string = `${BIG_CONSTS.SOURCES.pdfView}${arg.PO + arg.Rysunek}`;
@@ -390,65 +324,36 @@ function Technology() {
     );
   }
 
-  interface PdfThumbnail {
-  arg: TechRecord;
-  // urlText: string
-}
-
-    type AnchorThumbnailProps = {
-      recordId: Number;
-      operation: keyof TechRecord;
-      value: string;
-      onChangeRecord: (
-        id: Number,
-        operations: keyof TechRecord,
-        newValue: string
-      ) => void;
-    };
-  const AnchorThumbnail: React.FC<AnchorThumbnailProps> () => {
-    console.log(arg, 'tutej nr zlecenia')
-    return (
-      <div>
-        <a href={linkGen(arg)} target="_blank" rel="noopener noreferrer">
-          <PdfThumbnail arg={arg} />
-        </a>
-      </div>
-    );
-  }
-
-      type TechnologyRowProps = {
-      record: TechRecord;
-      onChangeRecord: (
-        id: Number,
-        operations: keyof TechRecord,
-        newValue: string
-      ) => void;
-      getFieldValue : (
-        recordId: number,
-        operation: keyof TechRecord
-      ) => void;
-      ops: keyof TechRecord
-    };
+  type TechnologyRowProps = {
+    record: TechRecord;
+    onChangeRecord: (id: number, operations: Ops, newValue: string) => void;
+    getFieldValue: (recordId: number, operation: Ops) => string;
+  };
 
   const TechnologyRow: React.FC<TechnologyRowProps> = memo(
-    ({ record, onChangeRecord, getFieldValue, ops }) => (      
-      <tr key={record.ID} className="record-row">
+    ({ record, onChangeRecord, getFieldValue }) => (
+      <tr
+        key={`${record.ID}-${record.PO}-${record.Rysunek}`}
+        className="record-row"
+      >
         <td className={dateStyle(record.S)}>{record.S}</td>
         <td className={dateStyle(record.F)}>{record.F}</td>
         <td className="id-style ">{idTextFormatting(record.ID)}</td>
         <td>{record.PO}</td>
-        <td><AnchorThumbnail arg={record}/></td>
+        <td>
+          <AnchorThumbnail id={record.ID} po={record.PO} rysunek={record.Rysunek} />
+        </td>
         <td>{record.Rysunek}</td>
         <td className="sztuki_column">{record.Sztuki}</td>
         <td>{record.Materiał}</td>
         <td>{record.Cięcia}</td>
         <td>{record.Przygotówka}</td>
         <td>{record.Komentarz}</td>
-        {ops.map((op: any) => (
+        {Array.from(ops).map((op: any) => (
           <SelectField
             key={op + record.ID}
             recordId={record.ID}
-            operation={op}
+            operation={op as Ops}
             value={getFieldValue(record.ID, op)}
             onChangeRecord={onChangeRecord}
           />
@@ -475,7 +380,6 @@ function Technology() {
             record={record}
             getFieldValue={getFieldValue}
             onChangeRecord={onChangeRecord}
-            ops={ops}
           />
         ))}
       </tbody>
@@ -483,14 +387,10 @@ function Technology() {
   }
 
   type SelectFieldProps = {
-    recordId: Number;
-    operation: keyof TechRecord;
+    recordId: number;
+    operation: Ops;
     value: string;
-    onChangeRecord: (
-      id: Number,
-      operations: keyof TechRecord,
-      newValue: string
-    ) => void;
+    onChangeRecord: (id: number, operations: Ops, newValue: string) => void;
   };
 
   const SelectField: React.FC<SelectFieldProps> = memo(
@@ -524,11 +424,11 @@ function Technology() {
     }
   );
 
-  const linkGen = (obj: any) => {
-    const item_fn = (obj: any) => {
-      return obj.PO + obj.Rysunek;
+  const linkGen = (props: PdfThumbnailProps) => {
+    const item_fn = (props: PdfThumbnailProps) => {
+      return props.po.toString() + props.rysunek;
     };
-    return `${BIG_CONSTS.SOURCES.pdfView}${encodeURIComponent(item_fn(obj))}`;
+    return `${BIG_CONSTS.SOURCES.pdfView}${encodeURIComponent(item_fn(props))}`;
   };
 
   return (
